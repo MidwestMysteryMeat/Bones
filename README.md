@@ -47,8 +47,9 @@ jackpot triggers, table limits, plus a 300k-roll statistical check of the Pass
 Line house edge against the theoretical 1.414%. There's also
 `lua tests/br_test.lua` — full seeded Boneyard matches, mutators, chain math,
 payouts, AI-targeting spread regression, and the PvE fever chain. The renderer
-test verifies that the programmatic dice tumble, land on the supplied result,
-settle cleanly, and draw the numeric face without an image asset.
+test verifies the projected 3D cube geometry, ballistic tumble, physical
+face-up result detection, full-tray translation, and authoritative six-face
+settle without a forced-orientation snap, image assets, or a browser runtime.
 
 ## Building for Steam
 

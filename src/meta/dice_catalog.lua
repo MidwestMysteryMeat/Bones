@@ -13,8 +13,8 @@ local config = require("src.core.config")
 
 local catalog = {}
 
--- Cosmetic = body color, face/accent color (legacy key: pip), and optional
--- rarity glow color for the programmatic renderer.
+-- Cosmetic = body color, pip color, and optional rarity glow color for the
+-- projected 3D renderer.
 local function die(id, name, rarity, body, pip, modifier, glow)
   return {
     id = id, name = name, rarity = rarity,
