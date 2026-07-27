@@ -119,3 +119,9 @@ payouts, AI-targeting spread regression, and the PvE fever chain.
 - Full controller menu navigation (`main.lua`).
 - Audio/music assets: `src/audio/sfx.lua` maps event names to files under
   `assets/sfx/` — drop `.ogg` files in and they play; missing files log once.
+
+---
+
+<sub>Support development — <a href="https://ko-fi.com/midwestmysterymeat">Ko-fi</a></sub>
+
+<img src=".github/donation-qrcode.png" width="120" alt="Donation QR code">
