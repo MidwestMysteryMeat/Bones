@@ -39,13 +39,16 @@ Headless engine tests (no LÖVE required, any Lua 5.1+/LuaJIT):
 
 ```
 lua tests/engine_test.lua
+lua tests/dice_render_test.lua
 ```
 
 Covers every bet's payout with rigged deterministic dice, phase transitions,
 jackpot triggers, table limits, plus a 300k-roll statistical check of the Pass
 Line house edge against the theoretical 1.414%. There's also
 `lua tests/br_test.lua` — full seeded Boneyard matches, mutators, chain math,
-payouts, AI-targeting spread regression, and the PvE fever chain.
+payouts, AI-targeting spread regression, and the PvE fever chain. The renderer
+test verifies that the programmatic dice tumble, land on the supplied result,
+settle cleanly, and draw the numeric face without an image asset.
 
 ## Building for Steam
 
