@@ -12,14 +12,18 @@ local screen = {}
 screen.fonts = {}
 
 function screen.load()
-  local h = love.graphics.getHeight()
-  local scale = h / 720
+  local w, h = love.graphics.getDimensions()
+  -- Scale against both axes so a short/wide window does not produce fonts
+  -- that collide vertically. Keep a readable floor at the supported minimum
+  -- window size instead of shrinking labels into single-digit pixels.
+  local scale = math.min(w / 1280, h / 720)
+  scale = math.max(0.82, math.min(1.5, scale))
   screen.fonts = {
-    title  = love.graphics.newFont(math.floor(52 * scale)),
-    header = love.graphics.newFont(math.floor(30 * scale)),
-    body   = love.graphics.newFont(math.floor(18 * scale)),
-    small  = love.graphics.newFont(math.floor(14 * scale)),
-    huge   = love.graphics.newFont(math.floor(72 * scale)),
+    title  = love.graphics.newFont(math.max(38, math.floor(52 * scale))),
+    header = love.graphics.newFont(math.max(24, math.floor(30 * scale))),
+    body   = love.graphics.newFont(math.max(15, math.floor(18 * scale))),
+    small  = love.graphics.newFont(math.max(12, math.floor(14 * scale))),
+    huge   = love.graphics.newFont(math.max(52, math.floor(72 * scale))),
   }
   widgets.fonts = screen.fonts
 end
@@ -28,19 +32,37 @@ end
 function screen.drawFelt()
   local g = love.graphics
   local w, h = g.getDimensions()
-  g.setColor(0.05, 0.25, 0.13)
+  g.setColor(0.025, 0.19, 0.105)
   g.rectangle("fill", 0, 0, w, h)
-  -- vignette (four soft rects, cheap and effective)
-  g.setColor(0, 0, 0, 0.35)
-  g.rectangle("fill", 0, 0, w, h * 0.12)
-  g.rectangle("fill", 0, h * 0.88, w, h * 0.12)
-  g.setColor(0, 0, 0, 0.2)
-  g.rectangle("fill", 0, 0, w * 0.06, h)
-  g.rectangle("fill", w * 0.94, 0, w * 0.06, h)
-  -- wooden rail hint
-  g.setColor(0.28, 0.16, 0.08)
-  g.rectangle("fill", 0, 0, w, 10)
-  g.rectangle("fill", 0, h - 10, w, 10)
+
+  -- A quiet woven-felt pattern gives the table depth without a bitmap asset.
+  g.setLineWidth(1)
+  for x = -h, w, 44 do
+    g.setColor(0.22, 0.54, 0.34, 0.035)
+    g.line(x, 0, x + h, h)
+  end
+  for x = 0, w + h, 44 do
+    g.setColor(0, 0, 0, 0.025)
+    g.line(x, 0, x - h, h)
+  end
+
+  -- Layered vignette and a warmer, dimensional wooden rail.
+  g.setColor(0, 0, 0, 0.28)
+  g.rectangle("fill", 0, 0, w, h * 0.10)
+  g.rectangle("fill", 0, h * 0.90, w, h * 0.10)
+  g.setColor(0, 0, 0, 0.18)
+  g.rectangle("fill", 0, 0, w * 0.035, h)
+  g.rectangle("fill", w * 0.965, 0, w * 0.035, h)
+
+  g.setColor(0.16, 0.075, 0.035)
+  g.rectangle("fill", 0, 0, w, 12)
+  g.rectangle("fill", 0, h - 12, w, 12)
+  g.setColor(0.47, 0.27, 0.11)
+  g.rectangle("fill", 0, 2, w, 4)
+  g.rectangle("fill", 0, h - 8, w, 4)
+  g.setColor(0.9, 0.63, 0.25, 0.20)
+  g.line(0, 11, w, 11)
+  g.line(0, h - 12, w, h - 12)
   g.setColor(1, 1, 1, 1)
 end
 

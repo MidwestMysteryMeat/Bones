@@ -31,6 +31,12 @@ function state:draw()
     sfx.setVolumes(mv, sv)
   end
 
+  local diceSpeed, speedChanged = widgets.slider(
+    "diceSpeed", x, y, 300, s.diceSpeed or 1, 0.75, 2.0,
+    "Dice animation speed", "%.2fx")
+  if speedChanged then s.diceSpeed = diceSpeed end
+
+  y = y + 50
   local shake, shch = widgets.checkbox(x, y, "Screenshake", s.screenshake)
   if shch then
     s.screenshake = shake

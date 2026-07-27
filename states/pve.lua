@@ -29,6 +29,48 @@ local rolling = false
 local pendingRoll, pendingEvents = nil, nil
 local achToasts = {}   -- { text, time }
 local failReason = nil
+local presented = {}
+
+local function copyArray(source)
+  local result = {}
+  for i, value in ipairs(source or {}) do result[i] = value end
+  return result
+end
+
+--- The engine resolves authoritatively before animation. Keep public table
+--- readouts frozen until the dice are physically stable so the HUD cannot
+--- spoil the result during its own reveal.
+local function refreshPresentation()
+  if not run then return end
+  local tier = run:tier()
+  presented = {
+    bankroll = run.bankroll,
+    point = run.table.point,
+    tierIndex = run.tierIndex,
+    tierName = tier.name,
+    tierTarget = tier.target,
+    minBet = tier.minBet,
+    maxBet = tier.maxBet,
+    jackpot = run.table.jackpotPool,
+    streak = run.winStreak,
+    feverPct = math.min(math.max(run.winStreak - 1, 0),
+      config.fever.maxSteps) * config.fever.stepPct * 100,
+    messages = copyArray(run.messages),
+    rollHistory = copyArray(run.table.rollHistory),
+  }
+end
+
+local function syncDiceLayout()
+  if not hud then return end
+  local tray = hud:getDiceTray()
+  local content = tray.content
+  for i, die in ipairs(dieViews) do
+    die.size = tray.dieSize
+    die.x = tray.centerX + (i == 1 and -tray.dieGap or tray.dieGap)
+    die.y = tray.centerY
+    die:setArena(content.x, content.y, content.w, content.h)
+  end
+end
 
 local function diceCosmetics()
   -- Visuals follow the equipped loadout; fall back to starter ivory.
@@ -51,18 +93,18 @@ function state:enter()
   end
   run = r
   steam.presence("Solo Run - Tier 1")
+  refreshPresentation()
 
-  local w, h = love.graphics.getDimensions()
   local cosmetics = diceCosmetics()
   dieViews = {
-    dice_render.newDie(w / 2 - 55, h * 0.62, 84, cosmetics[1]),
-    dice_render.newDie(w / 2 + 55, h * 0.62, 84, cosmetics[2]),
+    dice_render.newDie(0, 0, 84, cosmetics[1]),
+    dice_render.newDie(0, 0, 84, cosmetics[2]),
   }
   rolling = false
   achToasts = {}
 
   hud = hudmod.new({
-    wallet = function() return run.bankroll end,
+    wallet = function() return presented.bankroll end,
     betOn = function(betId)
       local total = 0
       for _, b in ipairs(run.table.bets) do
@@ -70,24 +112,31 @@ function state:enter()
       end
       return total
     end,
-    placeBet = function(betId, amount) return run:placeBet(betId, amount) end,
+    placeBet = function(betId, amount)
+      local ok, reason = run:placeBet(betId, amount)
+      if ok then presented.bankroll = run.bankroll end
+      return ok, reason
+    end,
     canBet = function() return not rolling and not run.over end,
     requestRoll = function() state.doRoll() end,
     info = function()
-      local tier = run:tier()
       return {
-        phase = run.table.phase, point = run.table.point,
+        phase = presented.point and "point" or "comeout",
+        point = presented.point,
         headline = ("TIER %d  -  %s   (advance at %d)")
-          :format(run.tierIndex, tier.name, tier.target),
-        jackpot = run.table.jackpotPool,
-        streak = run.winStreak,
-        feverPct = math.min(math.max(run.winStreak - 1, 0),
-          config.fever.maxSteps) * config.fever.stepPct * 100,
-        messages = run.messages,
-        minBet = tier.minBet, maxBet = tier.maxBet,
+          :format(presented.tierIndex, presented.tierName,
+            presented.tierTarget),
+        jackpot = presented.jackpot,
+        streak = presented.streak,
+        feverPct = presented.feverPct,
+        messages = presented.messages,
+        rollHistory = presented.rollHistory,
+        minBet = presented.minBet,
+        maxBet = presented.maxBet,
       }
     end,
   })
+  syncDiceLayout()
 end
 
 function state.doRoll()
@@ -109,19 +158,21 @@ function state.doRoll()
   end
   local nearMiss = pve.isNearMiss(pendingRoll, exposure, run.table.limits.min)
 
-  local dur = 0.9
+  local diceSpeed = math.max(0.5, save.data.settings.diceSpeed or 1)
+  local dur = 0.9 / diceSpeed
   if nearMiss then
     -- The single most important "one more roll" hook: stretch the reveal,
     -- slow the world, duck the music, zoom in slightly.
-    dur = 1.6
+    dur = 1.6 / diceSpeed
     juice.slowmo(0.35, 1.2, 1.14)
     sfx.duck(1.3)
   end
 
   local landed = 0
+  syncDiceLayout()
   for i, dv in ipairs(dieViews) do
     local face = pendingRoll.dice[i] or 1
-    dv:startTumble(face, dur + (i - 1) * 0.12, function()
+    dv:startTumble(face, dur + (i - 1) * (0.12 / diceSpeed), function()
       landed = landed + 1
       sfx.play("dice_land", { pitch = 0.95 + i * 0.05 })
       particles.sparks(dv.x, dv.y + dv.size / 2)
@@ -135,6 +186,7 @@ function state.reveal()
   local roll, events = pendingRoll, pendingEvents
   if not roll then return end
   pendingRoll, pendingEvents = nil, nil
+  refreshPresentation()
 
   juice.hitstop(0.07)
   local w, h = love.graphics.getDimensions()
@@ -142,7 +194,8 @@ function state.reveal()
   if events.net > 0 then
     local scale = events.net / (run.table.limits.min * 20)
     juice.shake(4 + math.min(18, scale * 16))
-    particles.coinBurst(w / 2, h * 0.62, scale)
+    local tray = hud:getDiceTray()
+    particles.coinBurst(tray.centerX, tray.centerY, scale)
     sfx.play("win_chime")
     if run.winStreak >= 2 then sfx.streakRiser(run.winStreak) end
   elseif events.net < 0 then
@@ -176,6 +229,7 @@ function state:update(dt)
   sfx.update(dt)
   widgets.beginFrame()
   hud:update(dt)
+  syncDiceLayout()
   for _, dv in ipairs(dieViews) do dv:update(sdt) end
   particles.update(sdt)
 
@@ -208,12 +262,19 @@ function state:draw()
     return
   end
 
-  juice.attach()
   screen.drawFelt()
   hud:draw()
+
+  -- Only the physical table action shakes/zooms. The HUD remains anchored,
+  -- and a hard scissor keeps even a fast throw inside the reserved lane.
+  juice.attach()
+  local tray = hud:getDiceTray()
+  g.setScissor(tray.content.x, tray.content.y, tray.content.w, tray.content.h)
   for _, dv in ipairs(dieViews) do dv:draw() end
+  g.setScissor()
   particles.draw()
   juice.detach()
+  hud:drawOverlay()
   juice.drawOverlay(w, h)
 
   -- Jackpot ticker front and center.
@@ -237,7 +298,8 @@ function state:draw()
 
   -- Cash out / leave.
   if not run.over then
-    if widgets.button(24, h - 100, 150, 40, "CASH OUT",
+    local cashOut = hud:getAuxButtonRect()
+    if widgets.button(cashOut.x, cashOut.y, cashOut.w, cashOut.h, "CASH OUT",
       { small = true, color = { 0.5, 0.4, 0.1 }, disabled = rolling }) then
       run:cashOut()
       save.autosave("run_end")
@@ -258,6 +320,7 @@ function state:mousepressed(x, y, button)
 end
 
 function state:keypressed(key)
+  if hud and hud:keypressed(key) then return end
   if key == "space" and run and not run.over then state.doRoll() end
   if key == "escape" then
     if run and not run.over then

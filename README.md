@@ -16,6 +16,11 @@ A juicy, fast dice gambler built on a simplified craps engine. Four modes:
 There's a **HOW TO PLAY** tab in the menu: craps 101 with live practice dice, every
 bet with payouts (generated from the config), and guides for each mode.
 
+The match table is responsive down to 960x540. Dice travel through a dedicated
+lane instead of crossing controls; hover any bet for a plain-English rule,
+watch recent totals in the lane header, and change dice animation speed in
+Settings.
+
 **Play money only.** No real-money anything. All currency is in-game "Chips."
 
 ## Run it
@@ -30,8 +35,9 @@ vendored in `lib/` (hump, flux, bitser, sock, anim8).
 The game is fully playable offline: the Steam layer (`src/steam/steam.lua`)
 no-ops with a console warning when Steam isn't running.
 
-Controls: **mouse** to pick chips and click bet spots on the felt, **SPACE**
-to roll, **ESC** to cash out / leave. Gamepad: A = roll, B = back.
+Controls: **mouse** to pick chips and click bet spots on the felt, **1–4** to
+pick a chip denomination, **SPACE** to roll, **ESC** to cash out / leave.
+Gamepad: A = roll, B = back.
 
 ## Tests
 
@@ -40,6 +46,7 @@ Headless engine tests (no LÖVE required, any Lua 5.1+/LuaJIT):
 ```
 lua tests/engine_test.lua
 lua tests/dice_render_test.lua
+lua tests/hud_layout_test.lua
 ```
 
 Covers every bet's payout with rigged deterministic dice, phase transitions,
@@ -50,6 +57,8 @@ payouts, AI-targeting spread regression, and the PvE fever chain. The renderer
 test verifies the projected 3D cube geometry, ballistic tumble, physical
 face-up result detection, full-tray translation, and authoritative six-face
 settle without a forced-orientation snap, image assets, or a browser runtime.
+The HUD test checks region separation and complete control/dice containment at
+the supported minimum, both reported screenshot sizes, default, 720p, and 1080p.
 
 ## Building for Steam
 

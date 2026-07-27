@@ -88,6 +88,15 @@ check(polygonCalls > 10,
   "beveled cube, visible faces, and pips are projected as 3D polygons")
 check(ellipseCalls >= 1, "die casts a separate table-contact shadow")
 
+local laneDie = diceRender.newDie(450, 320, 80)
+laneDie:setArena(120, 250, 760, 210)
+laneDie:startTumble(3, 0.2)
+local laneStartX = laneDie.x + laneDie.offsetX
+local laneStartY = laneDie.y + laneDie.offsetY
+check(laneStartX >= 120 and laneStartX <= 880
+    and laneStartY >= 250 and laneStartY <= 460,
+  "configured dice lane contains the full throw approach")
+
 die:startTumble(99, 0.05)
 die:update(0.06)
 check(die.face == 6, "invalid high results clamp to a d6 face")

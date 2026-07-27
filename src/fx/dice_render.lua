@@ -371,8 +371,21 @@ function dice_render.newDie(x, y, size, cosmetic)
     offsetY = 0,
     throwOffsetX = 0,
     throwOffsetY = 0,
+    arena = nil,
     onLand = nil,
   }, Die)
+end
+
+--- Constrain future throws to a table region. The die's resting x/y remains
+--- authoritative; the arena only determines where its physical approach
+--- begins so it cannot travel through HUD controls.
+function Die:setArena(x, y, width, height)
+  self.arena = {
+    x = x,
+    y = y,
+    w = math.max(1, width),
+    h = math.max(1, height),
+  }
 end
 
 --- Kick off a physical-looking throw that is guaranteed to settle on the
@@ -402,12 +415,16 @@ function Die:startTumble(finalFace, duration, onLand)
     and love.graphics.getWidth() or 1280
   local viewportHeight = love and love.graphics and love.graphics.getHeight
     and love.graphics.getHeight() or 720
+  local arena = self.arena or {
+    x = 0, y = 0, w = viewportWidth, h = viewportHeight,
+  }
+  local arenaCenterX = arena.x + arena.w / 2
   local throwSide
   if self.size <= 36 then
     throwSide = randomUnit() < 0.5 and -1 or 1
-  elseif self.x < viewportWidth * 0.48 then
+  elseif self.x < arenaCenterX - self.size * 0.05 then
     throwSide = -1
-  elseif self.x > viewportWidth * 0.52 then
+  elseif self.x > arenaCenterX + self.size * 0.05 then
     throwSide = 1
   else
     throwSide = randomUnit() < 0.5 and -1 or 1
@@ -415,17 +432,20 @@ function Die:startTumble(finalFace, duration, onLand)
 
   local edgeRoom
   if throwSide < 0 then
-    edgeRoom = math.max(self.size * 1.5, self.x - self.size * 0.72)
+    edgeRoom = math.max(
+      self.size * 0.9, self.x - arena.x - self.size * 0.72)
   else
     edgeRoom = math.max(
-      self.size * 1.5, viewportWidth - self.x - self.size * 0.72)
+      self.size * 0.9,
+      arena.x + arena.w - self.x - self.size * 0.72)
   end
   local maxTravel = self.size <= 36
     and self.size * 2.0
-    or math.min(viewportWidth * 0.44, self.size * 6.5)
+    or math.min(arena.w * 0.46, self.size * 6.5)
   self.throwOffsetX = throwSide * math.min(edgeRoom, maxTravel)
 
-  local downRoom = math.max(0, viewportHeight - self.y - self.size * 0.72)
+  local downRoom = math.max(
+    0, arena.y + arena.h - self.y - self.size * 0.72)
   local desiredDown = self.size <= 36
     and self.size * 0.55
     or self.size * (1.15 + randomUnit() * 0.55)

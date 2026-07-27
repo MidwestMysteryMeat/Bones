@@ -15,7 +15,9 @@ config.SAVE_VERSION = 1         -- bump when the save format changes
 
 -- Window / display ----------------------------------------------------------
 config.window = {
-  width = 1280, height = 720,
+  -- Fits inside a 1280x720 desktop including normal Windows borders/taskbar.
+  -- Every table remains responsive up through fullscreen and down to minimum.
+  width = 1180, height = 650,
   minWidth = 960, minHeight = 540,
   vsync = 1,
 }

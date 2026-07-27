@@ -28,20 +28,34 @@ local hud, dieViews
 local myBets = {}    -- betId -> amount (mirror for HUD display)
 local phase, point = "comeout", nil
 local pool = 0
+local rollHistory = {}
 local standings, ratingChange = nil, nil
 local errorToast, errorTime = nil, 0
+
+local function syncDiceLayout()
+  if not hud or not dieViews then return end
+  local tray = hud:getDiceTray()
+  local content = tray.content
+  for i, die in ipairs(dieViews) do
+    die.size = tray.dieSize
+    die.x = tray.centerX + (i == 1 and -tray.dieGap or tray.dieGap)
+    die.y = tray.centerY
+    die:setArena(content.x, content.y, content.w, content.h)
+  end
+end
 
 function state:enter(_, enterCtx)
   ctx = enterCtx
   standings, ratingChange = nil, nil
   myBets = {}
+  rollHistory = {}
   phase, point, pool = "comeout", nil, 0
   steam.presence(ctx.mode == "ranked" and "At a Ranked Table" or "Casual Table")
 
   local w, h = love.graphics.getDimensions()
   dieViews = {
-    dice_render.newDie(w / 2 - 55, h * 0.62, 84),
-    dice_render.newDie(w / 2 + 55, h * 0.62, 84),
+    dice_render.newDie(0, 0, 84),
+    dice_render.newDie(0, 0, 84),
   }
 
   local c = ctx.client
@@ -53,13 +67,22 @@ function state:enter(_, enterCtx)
     end
   end
   c.cb.onRoll = function(roll)
-    phase, point = roll.phase, roll.point
     sfx.play("dice_rattle")
+    local diceSpeed = math.max(0.5, save.data.settings.diceSpeed or 1)
+    syncDiceLayout()
+    local landed = 0
     for i, dv in ipairs(dieViews) do
-      dv:startTumble(roll.dice[i] or 1, 0.9 + (i - 1) * 0.12, function()
+      dv:startTumble(roll.dice[i] or 1,
+        0.9 / diceSpeed + (i - 1) * (0.12 / diceSpeed), function()
+        landed = landed + 1
         sfx.play("dice_land")
         particles.sparks(dv.x, dv.y + dv.size / 2)
         juice.hitstop(0.05)
+        if landed == #dieViews then
+          phase, point = roll.phase, roll.point
+          rollHistory[#rollHistory + 1] = roll
+          if #rollHistory > 20 then table.remove(rollHistory, 1) end
+        end
       end)
     end
   end
@@ -68,7 +91,8 @@ function state:enter(_, enterCtx)
     local mine = data.payouts and data.payouts[c.myId]
     if mine and mine > 0 then
       juice.shake(6)
-      particles.coinBurst(w / 2, h * 0.62, mine / 200)
+      local tray = hud:getDiceTray()
+      particles.coinBurst(tray.centerX, tray.centerY, mine / 200)
       sfx.play("win_chime")
     end
   end
@@ -121,10 +145,12 @@ function state:enter(_, enterCtx)
           :format(ctx.mode:upper(), c.round or 0),
         jackpot = pool, streak = 0,
         messages = nil,
+        rollHistory = rollHistory,
         lockClock = c.betClock > 0 and c.betClock or nil,
       }
     end,
   })
+  syncDiceLayout()
 end
 
 function state:update(dt)
@@ -134,6 +160,7 @@ function state:update(dt)
   if ctx.server then ctx.server:update(dt) end
   ctx.client:update(dt)
   hud:update(dt)
+  syncDiceLayout()
   for _, dv in ipairs(dieViews) do dv:update(sdt) end
   particles.update(sdt)
   if errorTime > 0 then
@@ -146,12 +173,17 @@ function state:draw()
   local g = love.graphics
   local w, h = g.getDimensions()
 
-  juice.attach()
   screen.drawFelt()
   hud:draw()
+
+  juice.attach()
+  local tray = hud:getDiceTray()
+  g.setScissor(tray.content.x, tray.content.y, tray.content.w, tray.content.h)
   for _, dv in ipairs(dieViews) do dv:draw() end
+  g.setScissor()
   particles.draw()
   juice.detach()
+  hud:drawOverlay()
   juice.drawOverlay(w, h)
 
   -- Verification badge: every broadcast roll re-derived from its seed.
@@ -203,6 +235,7 @@ end
 
 function state:keypressed(key)
   if widgets.keypressed(key) then return end
+  if hud and hud:keypressed(key) then return end
   if key == "escape" then
     -- Leaving mid-match: the server folds our bets (ranked forfeits them).
     state.shutdown()

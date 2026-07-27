@@ -69,7 +69,13 @@ function save.defaults()
     winStreakBest  = 0,
     rating         = config.ranked.baseRating,
     leaderboard    = {},                        -- local scores, see leaderboard.lua
-    settings       = { musicVol = 0.7, sfxVol = 1.0, screenshake = true, fullscreen = false },
+    settings       = {
+      musicVol = 0.7,
+      sfxVol = 1.0,
+      diceSpeed = 1.0,
+      screenshake = true,
+      fullscreen = false,
+    },
   }
 end
 
@@ -98,8 +104,15 @@ function save.load()
     save.data = save.defaults()
   end
   -- Fill any fields added since this save was written.
-  for k, v in pairs(save.defaults()) do
+  local defaults = save.defaults()
+  for k, v in pairs(defaults) do
     if save.data[k] == nil then save.data[k] = v end
+  end
+  save.data.settings = save.data.settings or {}
+  for key, value in pairs(defaults.settings) do
+    if save.data.settings[key] == nil then
+      save.data.settings[key] = value
+    end
   end
   return save.data
 end
