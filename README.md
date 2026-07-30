@@ -1,5 +1,7 @@
 # Bones — a dice gambling game (LÖVE 11.5)
 
+![Solo Run — Back Alley craps table, dice lane, side bets](screenshots/gameplay.png)
+
 A juicy, fast dice gambler built on a simplified craps engine. Four modes:
 
 - **Solo Run (PvE)** — climb escalating tiers against the AI House. Skill-modifier
