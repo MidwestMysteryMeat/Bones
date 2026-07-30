@@ -86,9 +86,9 @@ end
 function state:enter()
   failReason = nil
   run = nil
-  local r, reason = pve.newRun(save.data)
+  local r, startReason = pve.newRun(save.data)
   if not r then
-    failReason = reason
+    failReason = startReason
     return
   end
   run = r
@@ -113,9 +113,9 @@ function state:enter()
       return total
     end,
     placeBet = function(betId, amount)
-      local ok, reason = run:placeBet(betId, amount)
+      local ok, betReason = run:placeBet(betId, amount)
       if ok then presented.bankroll = run.bankroll end
-      return ok, reason
+      return ok, betReason
     end,
     canBet = function() return not rolling and not run.over end,
     requestRoll = function() state.doRoll() end,

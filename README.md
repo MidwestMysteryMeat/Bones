@@ -42,7 +42,7 @@ Gamepad: A = roll, B = back.
 ## Checks
 
 ```
-luacheck .          # static analysis; must report 0 errors
+luacheck .          # static analysis; must report 0 warnings / 0 errors
 ```
 
 `.luacheckrc` excludes `lib/` (vendored third-party: hump, sock.lua, anim8,
@@ -56,18 +56,22 @@ Headless engine tests (no LÖVE required, any Lua 5.1+/LuaJIT):
 lua tests/engine_test.lua
 lua tests/dice_render_test.lua
 lua tests/hud_layout_test.lua
+lua tests/br_test.lua
+lua tests/meta_test.lua
 ```
 
 Covers every bet's payout with rigged deterministic dice, phase transitions,
 jackpot triggers, table limits, plus a 300k-roll statistical check of the Pass
-Line house edge against the theoretical 1.414%. There's also
-`lua tests/br_test.lua` — full seeded Boneyard matches, mutators, chain math,
+Line house edge against the theoretical 1.414%. `tests/br_test.lua` covers full
+seeded Boneyard matches, mutators, chain math,
 payouts, AI-targeting spread regression, and the PvE fever chain. The renderer
 test verifies the projected 3D cube geometry, ballistic tumble, physical
 face-up result detection, full-tray translation, and authoritative six-face
 settle without a forced-orientation snap, image assets, or a browser runtime.
 The HUD test checks region separation and complete control/dice containment at
 the supported minimum, both reported screenshot sizes, default, 720p, and 1080p.
+`tests/meta_test.lua` covers economy persistence, rewards, unlocks, ranked
+rating math, and fair-dice verification.
 
 ## Building for Steam
 
