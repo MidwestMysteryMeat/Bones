@@ -133,6 +133,12 @@ the supported minimum, both reported screenshot sizes, default, 720p, and 1080p.
 - Audio/music assets: `src/audio/sfx.lua` maps event names to files under
   `assets/sfx/` — drop `.ogg` files in and they play; missing files log once.
 
+## License
+
+Licensed under the **[Apache License 2.0](LICENSE)** — free to use, modify, fork and build on, commercially or not.
+
+**Credit is required.** Apache-2.0 §4(c)–(d) obliges you to keep the copyright notice and to reproduce [`NOTICE`](NOTICE) in anything you distribute, including binaries and hosted builds. Credit it as `Bones by MysteryMeat` (https://github.com/MidwestMysteryMeat/Bones) in your credits screen, About box, or docs. The project name and the MysteryMeat name are not licensed for endorsement or promotion (§6).
+
 ---
 
 <sub>Support development — <a href="https://ko-fi.com/midwestmysterymeat">Ko-fi</a></sub>
