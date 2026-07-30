@@ -400,9 +400,9 @@ function Match:finish()
   self.over = true
 
   local standings = self:standings()
-  local human, humanPos
+  local humanPos
   for _, s in ipairs(standings) do
-    if s.isHuman then human, humanPos = s, s.position break end
+    if s.isHuman then humanPos = s.position break end
   end
 
   local p1 = self.players[1]

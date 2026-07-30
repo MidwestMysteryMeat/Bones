@@ -39,6 +39,15 @@ Controls: **mouse** to pick chips and click bet spots on the felt, **1–4** to
 pick a chip denomination, **SPACE** to roll, **ESC** to cash out / leave.
 Gamepad: A = roll, B = back.
 
+## Checks
+
+```
+luacheck .          # static analysis; must report 0 errors
+```
+
+`.luacheckrc` excludes `lib/` (vendored third-party: hump, sock.lua, anim8,
+flux, bitser) and mutes purely cosmetic codes, each with a stated reason.
+
 ## Tests
 
 Headless engine tests (no LÖVE required, any Lua 5.1+/LuaJIT):
