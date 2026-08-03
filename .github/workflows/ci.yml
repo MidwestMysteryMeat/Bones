@@ -1,0 +1,47 @@
+name: CI
+
+# The dice-engine tests are headless (rng.lua falls back to a portable LCG, so
+# no LÖVE is needed) and each file runs standalone under any Lua 5.1–5.4 or
+# LuaJIT, exiting non-zero on failure. The lint job guards the one bug class the
+# tests cannot catch: a `local function` referenced before it is defined
+# resolves to a nil global, and nothing fails until that path executes.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  suite:
+    name: Headless tests (LuaJIT)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install LuaJIT
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luajit
+
+      - name: Run every test file
+        run: |
+          for f in tests/*_test.lua; do
+            echo "== $f =="
+            luajit "$f" || exit 1
+          done
+
+  lint:
+    name: Luacheck (undefined globals & the forward-reference trap)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install luacheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4 liblua5.4-dev luarocks
+          sudo luarocks install luacheck
+
+      - name: Lint
+        run: luacheck src states main.lua conf.lua tests
